@@ -9,8 +9,6 @@
     :license: MIT, see LICENSE for more details.
 """
 
-from __future__ import division, unicode_literals, print_function, absolute_import
-
 import pkg_resources
 
 from .highlevel import SimVisaLibrary

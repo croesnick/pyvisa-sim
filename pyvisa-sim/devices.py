@@ -80,6 +80,9 @@ class Device(Component):
     :type name: str
     """
 
+    def match(self, query: bytes):
+        raise NotImplementedError()
+
     # To be bound when adding the Device to Devices
     _resource_name = None
 

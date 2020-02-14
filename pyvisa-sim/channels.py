@@ -19,10 +19,9 @@ from .component import Component, Property, to_bytes
 
 class ChannelProperty(Property):
     """A channel property storing the value for all channels.
-
     """
 
-    def __init__(self, channel, name, default_value, specs):
+    def __init__(self, channel: 'Channels', name: str, default_value: str, specs):
         #: Reference to the channel holding that property.
         self._channel = channel
 

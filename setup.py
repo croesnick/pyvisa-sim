@@ -31,6 +31,7 @@ install_requires = [
 tests_require = [
     'coverage',
     'more-itertools',
+    'mypy',
     'pytest',
     'pytest-cov',
 ]
