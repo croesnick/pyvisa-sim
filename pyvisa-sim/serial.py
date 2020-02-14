@@ -9,14 +9,6 @@
     :license: MIT, see LICENSE for more details.
 """
 
-from __future__ import division, unicode_literals, print_function, absolute_import
-from six.moves import range
-
-try:
-    import six.moves.queue as queue
-except ImportError:
-    import queue
-
 import time
 
 from pyvisa import constants
@@ -97,7 +89,7 @@ class SerialInstrumentSession(sessions.Session):
         else:
 
             for i in range(len(data)):
-                self.device.write(data[i:i+1])
+                self.device.write(data[i:i + 1])
 
             if asrl_end == constants.SerialTermination.termination_char:
                 if send_end:

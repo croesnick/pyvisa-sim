@@ -3,8 +3,10 @@ PyVISA-sim Changelog
 
 .. _04-unreleased:
 
+- Drop support for Python 2.7 (EOL 2020-01-01)
 - Drop support for Python 3.2 (EOL 2016-02-27)
 - Drop support for Python 3.3 (EOL 2017-09-29)
+- Drop support for Python 3.4 (EOL ????-??-??)
 - Add support for Python 3.7 and 3.8
 - Add tox for project setup and test automation
 - Switch from unittest to pytest

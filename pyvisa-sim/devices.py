@@ -9,9 +9,11 @@
     :license: MIT, see LICENSE for more details.
 """
 
-from __future__ import absolute_import
+from typing import Any, Dict, Tuple, Union, Optional
+
 from pyvisa import constants, rname
 
+from .channels import Channels
 from .common import logger
 from .component import to_bytes, Component, NoResponse
 
@@ -86,11 +88,9 @@ class Device(Component):
     _query_eom = b''
 
     # Default end of message used in response operations
-    # :type: bytes
-    _response_eom = None
+    _response_eom = None  # type: Optional[bytes]
 
-    def __init__(self, name, delimiter):
-
+    def __init__(self, name: str, delimiter: Any) -> None:
         super(Device, self).__init__()
 
         #: Name of the device.
@@ -100,35 +100,29 @@ class Device(Component):
         self.delimiter = delimiter
 
         #: Mapping between a name and a Channels object
-        self._channels = {}
+        self._channels = {}  # type: Dict[str, Channels]
 
         #: Stores the error response for each query accepted by the device.
-        #: :type: dict[bytes, bytes | NoResponse]
-        self._error_response = {}
+        self._error_response = {}  # type: Dict[bytes, Union[bytes, Any]]
 
         #: Stores the registers by name.
         #: Register name -> Register object
-        #: :type: dict[str, StatusRegister]
-        self._status_registers = {}
+        self._status_registers = {}  # type: Dict[str, StatusRegister]
 
-        self._error_map = {}
+        self._error_map = {}  # type: Dict[str, Any]
 
         #: Stores the specific end of messages for device.
         #: TYPE CLASS -> (query termination, response termination)
-        #: :type: dict[(pyvisa.constants.InterfaceType, str), (str, str)]
-        self._eoms = {}
+        self._eoms = {}  # type: Dict[Tuple[constants.InterfaceType, str], Tuple[str, str]]
 
         #: Buffer in which the user can read
-        #: :type: bytearray
         self._output_buffer = bytearray()
 
         #: Buffer in which the user can write
-        #: :type: bytearray
         self._input_buffer = bytearray()
 
         #: Mapping an error queue query and the queue.
-        #: :type: dict
-        self._error_queues = {}
+        self._error_queues = {}  # type: Dict[str, Any]
 
     @property
     def resource_name(self):
@@ -141,14 +135,14 @@ class Device(Component):
         p = rname.parse_resource_name(value)
         self._resource_name = str(p)
         try:
-            self._query_eom, self._response_eom =\
+            self._query_eom, self._response_eom = \
                 self._eoms[(p.interface_type_const, p.resource_class)]
         except KeyError:
             logger.warning('No eom provided for %s, %s.'
-                           'Using LF.'% (p.interface_type_const, p.resource_class))
+                           'Using LF.' % (p.interface_type_const, p.resource_class))
             self._query_eom, self._response_eom = b'\n', b'\n'
 
-    def add_channels(self, ch_name, ch_obj):
+    def add_channels(self, ch_name: str, ch_obj: Channels) -> None:
         """Add a channel definition.
 
         """
@@ -212,11 +206,10 @@ class Device(Component):
                     resource_class)] = (to_bytes(query_termination),
                                         to_bytes(response_termination))
 
-    def write(self, data):
+    def write(self, data) -> Optional[bytes]:
         """Write data into the device input buffer.
 
         :param data: single element byte
-        :type data: bytes
         """
         logger.debug('Writing into device input buffer: %r' % data)
         if not isinstance(data, bytes):
@@ -230,7 +223,7 @@ class Device(Component):
 
         l = len(self._query_eom)
         if not self._input_buffer.endswith(self._query_eom):
-            return
+            return None
 
         try:
             message = bytes(self._input_buffer[:-l])
@@ -239,6 +232,9 @@ class Device(Component):
             for query in queries:
                 response = self._match(query)
                 eom = self._response_eom
+
+                if not eom:
+                    raise ValueError('Expected `eom` to be set, got None instead.')
 
                 if response is None:
                     response = self.error_response('command_error')
@@ -250,23 +246,22 @@ class Device(Component):
         finally:
             self._input_buffer = bytearray()
 
-    def read(self):
+        return None
+
+    def read(self) -> bytes:
         """Return a single byte from the output buffer
         """
         if self._output_buffer:
-            b, self._output_buffer = (self._output_buffer[0:1],
-                                      self._output_buffer[1:])
+            b, self._output_buffer = (self._output_buffer[0:1], self._output_buffer[1:])
             return b
 
         return b''
 
-    def _match(self, query):
+    def _match(self, query: bytes) -> Optional[bytes]:
         """Tries to match in dialogues, getters and setters and subcomponents
 
         :param query: message tuple
-        :type query: Tuple[bytes]
         :return: response if found or None
-        :rtype: Tuple[bytes] | None
         """
         response = self._match_dialog(query)
         if response is not None:
@@ -300,9 +295,7 @@ class Device(Component):
         """Tries to match in status registers
 
         :param query: message tuple
-        :type query: Tuple[bytes]
         :return: response if found or None
-        :rtype: Tuple[bytes] | None
         """
         if query in self._status_registers:
             register = self._status_registers[query]
@@ -317,9 +310,7 @@ class Device(Component):
         """Tries to match in error queues
 
         :param query: message tuple
-        :type query: Tuple[bytes]
         :return: response if found or None
-        :rtype: Tuple[bytes] | None
         """
         if query in self._error_queues:
             queue = self._error_queues[query]
@@ -336,7 +327,6 @@ class Devices(object):
     """
 
     def __init__(self):
-
         #: Devices
         #: dict[str, Device]
         self._internal = {}

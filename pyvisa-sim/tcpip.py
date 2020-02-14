@@ -9,14 +9,11 @@
     :license: MIT, see LICENSE for more details.
 """
 
-from __future__ import division, unicode_literals, print_function, absolute_import
-
 import time
 
 from pyvisa import constants
 
 from . import sessions
-from six.moves import range
 
 
 class BaseTCPIPSession(sessions.Session):
@@ -56,7 +53,7 @@ class BaseTCPIPSession(sessions.Session):
         send_end = self.get_attribute(constants.VI_ATTR_SEND_END_EN)
 
         for i in range(len(data)):
-            self.device.write(data[i:i+1])
+            self.device.write(data[i:i + 1])
 
         if send_end:
             # EOM 4882

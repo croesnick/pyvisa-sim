@@ -22,10 +22,9 @@ long_description = '\n\n'.join([read_content('README.rst'),
                                 read_content('CHANGES.rst')])
 
 install_requires = [
-    'enum34 ; python_version < "3"',
     'pyvisa>=1.6',
-    'PyYAML<5.3 ; python_version <  "3.5"',
-    'PyYAML     ; python_version >= "3.5"',
+    'PyYAML',
+    'typing-extensions',
     'stringparser',
 ]
 
@@ -64,8 +63,6 @@ setup(
         'Programming Language :: Python',
         'Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator',
         'Topic :: Software Development :: Libraries :: Python Modules',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',

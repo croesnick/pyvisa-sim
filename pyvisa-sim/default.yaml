@@ -136,8 +136,8 @@ devices:
         setter:
           q: "INST {:s}"
         specs:
-            valid: ["P6V", "P25V", "N25V"]
-            type: str
+          valid: ["P6V", "P25V", "N25V"]
+          type: str
       output_enabled:
         default: 0
         getter:

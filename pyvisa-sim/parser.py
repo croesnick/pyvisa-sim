@@ -9,19 +9,19 @@
     :license: MIT, see LICENSE for more details.
 """
 
-from __future__ import absolute_import
 import os
-from io import open, StringIO
 from contextlib import closing
+from io import open, StringIO
 from traceback import format_exc
+from typing import Dict, Tuple
 
 import pkg_resources
 import yaml
+from six.moves import map
 
+from .channels import Channels
 from .component import NoResponse
 from .devices import Devices, Device
-from .channels import Channels
-from six.moves import map
 
 
 def _ver_to_tuple(ver):
@@ -59,24 +59,21 @@ def _s(s):
     return s.strip(' ')
 
 
-def _get_pair(dd):
+def _get_pair(dd: Dict[str, str]) -> Tuple[str, str]:
     """Return a pair from a dialogue dictionary.
 
     :param dd: Dialogue dictionary.
-    :type dd: Dict[str, str]
     :return: (query, response)
-    :rtype: (str, str)
     """
     return _s(dd['q']), _s(dd.get('r', NoResponse))
 
 
-def _get_triplet(dd):
+def _get_triplet(dd: Dict[str, str]):
+    # (Dict[str, str]) -> (str, str | NoResponse, str | NoResponse)
     """Return a triplet from a dialogue dictionary.
 
     :param dd: Dialogue dictionary.
-    :type dd: Dict[str, str]
     :return: (query, response, error response)
-    :rtype: (str, str | NoResponse, str | NoResponse)
     """
     return _s(dd['q']), _s(dd.get('r', NoResponse)), _s(dd.get('e', NoResponse))
 
@@ -163,7 +160,7 @@ def get_bases(definition_dict, loader):
         return definition_dict
 
 
-def get_channel(device, ch_name, channel_dict, loader, resource_dict):
+def get_channel(device, ch_name, channel_dict, loader, resource_dict) -> Channels:
     """Get a channels from a channels dictionary.
 
     :param device:
@@ -171,7 +168,6 @@ def get_channel(device, ch_name, channel_dict, loader, resource_dict):
     :param channel_dict:
     :param loader:
     :param resource_dict:
-    :rtype: Device
     """
     channel_dict = get_bases(channel_dict, loader)
 
@@ -186,14 +182,13 @@ def get_channel(device, ch_name, channel_dict, loader, resource_dict):
     return channels
 
 
-def get_device(name, device_dict, loader, resource_dict):
+def get_device(name, device_dict, loader, resource_dict) -> Device:
     """Get a device from a device dictionary.
 
     :param loader:
     :param resource_dict:
     :param name: name of the device
     :param device_dict: device dictionary
-    :rtype: Device
     """
     device = Device(name, device_dict.get('delimiter', ';').encode('utf-8'))
 
@@ -274,12 +269,11 @@ class Loader(object):
         return data['devices'][device]
 
 
-def get_devices(filename, bundled):
+def get_devices(filename, bundled) -> Devices:
     """Get a Devices object from a file.
 
     :param bundled:
     :param filename: full path of the file to parse or name of the resource.
-    :rtype: Devices
     """
 
     loader = Loader(filename, bundled)

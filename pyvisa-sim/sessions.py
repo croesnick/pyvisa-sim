@@ -9,14 +9,10 @@
     :license: MIT, see LICENSE for more details.
 """
 
-from __future__ import division, unicode_literals, print_function, absolute_import
-
-try:
-    import six.moves.queue as queue
-except ImportError:
-    import queue
+from typing import Callable, Tuple, Any, Dict
 
 from pyvisa import constants, attributes, rname
+from typing_extensions import Type
 
 from .common import logger
 
@@ -31,20 +27,15 @@ class Session(object):
     :param parsed: the parsed resource name (optional).
     """
 
-    #: Maps (Interface Type, Resource Class) to Python class encapsulating that resource.
-    #: dict[(Interface Type, Resource Class) , Session]
-    _session_classes = dict()
+    #: Maps interface type and resource class to Python class encapsulating that resource.
+    _session_classes = dict()  # type: Dict[Tuple[constants.InterfaceType, str], Type['Session']]
 
     #: Session handler for the resource manager.
     session_type = None
 
     @classmethod
-    def get_session_class(cls, interface_type, resource_class):
+    def get_session_class(cls, interface_type: constants.InterfaceType, resource_class: str) -> Type['Session']:
         """Return the session class for a given interface type and resource class.
-
-        :type interface_type: constants.InterfaceType
-        :type resource_class: str
-        :return: Session
         """
         try:
             return cls._session_classes[(interface_type, resource_class)]
@@ -52,12 +43,12 @@ class Session(object):
             raise ValueError('No class registered for %s, %s' % (interface_type, resource_class))
 
     @classmethod
-    def register(cls, interface_type, resource_class):
+    def register(
+            cls, interface_type: constants.InterfaceType, resource_class: str
+    ) -> Callable[[Type['Session']], Type['Session']]:
         """Register a session class for a given interface type and resource class.
-
-        :type interface_type: constants.InterfaceType
-        :type resource_class: str
         """
+
         def _internal(python_class):
             if (interface_type, resource_class) in cls._session_classes:
                 logger.warning('%s is already registered in the ResourceManager. '
@@ -66,6 +57,7 @@ class Session(object):
             python_class.session_type = (interface_type, resource_class)
             cls._session_classes[(interface_type, resource_class)] = python_class
             return python_class
+
         return _internal
 
     def __init__(self, resource_manager_session, resource_name, parsed=None):
@@ -87,12 +79,11 @@ class Session(object):
         """
         pass
 
-    def get_attribute(self, attribute):
+    def get_attribute(self, attribute: int) -> Tuple[int, constants.StatusCode]:
         """Get an attribute from the session.
 
         :param attribute:
         :return: attribute value, status code
-        :rtype: object, constants.StatusCode
         """
 
         # Check that the attribute exists.
@@ -112,13 +103,12 @@ class Session(object):
         # Return the current value of the default according the VISA spec
         return self.attrs.setdefault(attribute, attr.default), constants.StatusCode.success
 
-    def set_attribute(self, attribute, attribute_state):
+    def set_attribute(self, attribute: int, attribute_state: Any) -> constants.StatusCode:
         """Get an attribute from the session.
 
         :param attribute_state:
         :param attribute:
         :return: attribute value, status code
-        :rtype: object, constants.StatusCode
         """
 
         # Check that the attribute exists.

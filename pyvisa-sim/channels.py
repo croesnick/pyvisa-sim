@@ -8,8 +8,8 @@
     :copyright: 2014 by PyVISA-sim Authors, see AUTHORS for more details.
     :license: MIT, see LICENSE for more details.
 """
-from __future__ import absolute_import
 from collections import defaultdict
+from typing import Optional
 
 import stringparser
 
@@ -21,18 +21,18 @@ class ChannelProperty(Property):
     """A channel property storing the value for all channels.
 
     """
-    def __init__(self, channel, name, default_value, specs):
 
+    def __init__(self, channel, name, default_value, specs):
         #: Reference to the channel holding that property.
         self._channel = channel
 
         super(ChannelProperty, self).__init__(name, default_value, specs)
 
-    def init_value(self, string_value):
+    def init_value(self, value):
         """Create an empty defaultdict holding the default value.
 
         """
-        value = self.validate_value(string_value)
+        value = self.validate_value(value)
         self._value = defaultdict(lambda: value)
 
     def get_value(self):
@@ -41,11 +41,11 @@ class ChannelProperty(Property):
         """
         return self._value[self._channel._selected]
 
-    def set_value(self, string_value):
+    def set_value(self, value):
         """Set the current value for a channel.
 
         """
-        value = self.validate_value(string_value)
+        value = self.validate_value(value)
         self._value[self._channel._selected] = value
 
 
@@ -53,6 +53,7 @@ class ChDict(dict):
     """Default dict like creating specialized command sets for a channel.
 
     """
+
     def __missing__(self, key):
         """Create a channel specialized version of the mapping found in
         __default__.
@@ -123,44 +124,39 @@ class Channels(Component):
                                   to_bytes(response),
                                   to_bytes(error)))
 
-    def match(self, query):
+    def match(self, query: bytes) -> Optional[bytes]:
         """Try to find a match for a query in the channel commands.
-
         """
         if not self.can_select:
             ch_id = self._device._properties['selected_channel'].get_value()
             if ch_id in self._ids:
                 self._selected = ch_id
             else:
-                return
+                return None
 
-            response = self._match_dialog(query,
-                                          self._dialogues['__default__'])
+            response = self._match_dialog(query, self._dialogues['__default__'])  # type: ignore
             if response is not None:
                 return response
 
-            response = self._match_getters(query,
-                                           self._getters['__default__'])
+            response = self._match_getters(query, self._getters['__default__'])  # type: ignore
             if response is not None:
                 return response
 
         else:
             for ch_id in self._ids:
                 self._selected = ch_id
-                response = self._match_dialog(query,
-                                              self._dialogues[ch_id])
+                response = self._match_dialog(query, self._dialogues[ch_id])  # type: ignore
                 if response is not None:
                     return response
 
-                response = self._match_getters(query,
-                                               self._getters[ch_id])
+                response = self._match_getters(query, self._getters[ch_id])  # type: ignore
 
                 if response is not None:
                     return response
 
         return self._match_setters(query)
 
-    def _match_setters(self, query):
+    def _match_setters(self, query: bytes):
         """Try to find a match
         """
         q = query.decode('utf-8')

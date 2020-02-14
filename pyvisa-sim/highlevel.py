@@ -9,19 +9,20 @@
     :license: MIT, see LICENSE for more details.
 """
 
-from __future__ import division, unicode_literals, print_function, absolute_import
-
 import random
 from traceback import format_exc
+from typing import Dict, Any, Tuple
 
-from pyvisa import constants, highlevel, rname
 import pyvisa.errors as errors
+from pyvisa import constants, highlevel, rname
 from pyvisa.compat import OrderedDict
 
 from . import parser
 from . import sessions
 
+
 # This import is required to register subclasses
+# noinspection PyUnresolvedReferences
 from . import gpib, serial, tcpip, usb
 
 
@@ -53,10 +54,8 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
         return d
 
     def _init(self):
-
         #: map session handle to session object.
-        #: dict[int, SessionSim]
-        self.sessions = {}
+        self.sessions = {}  # type: Dict[int, Any]
 
         try:
             if self.library_path == 'unset':
@@ -67,13 +66,12 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
             msg = 'Could not parse definitions file. %r'
             raise type(e)(msg % format_exc())
 
-    def _register(self, obj):
+    def _register(self, obj: sessions.Session) -> int:
         """Creates a random but unique session handle for a session object,
         register it in the sessions dictionary and return the value
 
         :param obj: a session object.
         :return: session handle
-        :rtype: int
         """
         session = None
 
@@ -84,8 +82,11 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
         return session
 
     # noinspection PyShadowingBuiltins
-    def open(self, session, resource_name,
-             access_mode=constants.AccessModes.no_lock, open_timeout=constants.VI_TMO_IMMEDIATE):
+    def open(
+            self, session: sessions.Session, resource_name: str,
+            access_mode: constants.AccessModes = constants.AccessModes.no_lock,
+            open_timeout: int = constants.VI_TMO_IMMEDIATE
+    ) -> Tuple[int, constants.StatusCode]:
         """Opens a session to the specified resource.
 
         Corresponds to viOpen function of the VISA library.
@@ -110,8 +111,8 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
             parsed = rname.parse_resource_name(resource_name)
         except rname.InvalidResourceName:
             return 0, constants.StatusCode.error_invalid_resource_name
-
         # Loops through all session types, tries to parse the resource name and if ok, open it.
+
         cls = sessions.Session.get_session_class(parsed.interface_type_const, parsed.resource_class)
 
         sess = cls(session, resource_name, parsed)
@@ -166,7 +167,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
 
         raise errors.VisaIOError(errors.StatusCode.error_resource_not_found.value)
 
-    def read(self, session, count):
+    def read(self, session, count) -> Tuple[bytes, constants.StatusCode]:
         """Reads data from device or interface synchronously.
 
         Corresponds to viRead function of the VISA library.
@@ -191,6 +192,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
             return b'', constants.StatusCode.error_nonsupported_operation
 
     def write(self, session, data):
+        # type: (Any, str) -> int
         """Writes data to device or interface synchronously.
 
         Corresponds to viWrite function of the VISA library.
@@ -212,7 +214,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
         except AttributeError:
             return constants.StatusCode.error_nonsupported_operation
 
-    def get_attribute(self, session, attribute):
+    def get_attribute(self, session, attribute) -> Tuple[int, constants.StatusCode]:
         """Retrieves the state of an attribute.
 
         Corresponds to viGetAttribute function of the VISA library.
@@ -220,8 +222,8 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
         :param session: Unique logical identifier to a session, event, or find list.
         :param attribute: Resource attribute for which the state query is made (see Attributes.*)
         :return: The state of the queried attribute for a specified resource, return value of the library call.
-        :rtype: unicode (Py2) or str (Py3), list or other type, :class:`pyvisa.constants.StatusCode`
         """
+
         try:
             sess = self.sessions[session]
         except KeyError:
@@ -229,7 +231,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
 
         return sess.get_attribute(attribute)
 
-    def set_attribute(self, session, attribute, attribute_state):
+    def set_attribute(self, session, attribute, attribute_state) -> constants.StatusCode:
         """Sets the state of an attribute.
 
         Corresponds to viSetAttribute function of the VISA library.
@@ -238,7 +240,6 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
         :param attribute: Attribute for which the state is to be modified. (Attributes.*)
         :param attribute_state: The state of the attribute to be set for the specified object.
         :return: return value of the library call.
-        :rtype: :class:`pyvisa.constants.StatusCode`
         """
 
         try:

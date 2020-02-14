@@ -9,14 +9,6 @@
     :license: MIT, see LICENSE for more details.
 """
 
-from __future__ import division, unicode_literals, print_function, absolute_import
-from six.moves import range
-
-try:
-    import six.moves.queue as queue
-except ImportError:
-    import queue
-
 import time
 
 from pyvisa import constants
@@ -69,7 +61,7 @@ class USBInstrumentSession(sessions.Session):
         send_end = self.get_attribute(constants.VI_ATTR_SEND_END_EN)
 
         for i in range(len(data)):
-            self.device.write(data[i:i+1])
+            self.device.write(data[i:i + 1])
 
         if send_end:
             # EOM 4882
@@ -122,7 +114,7 @@ class USBRawSession(sessions.Session):
         send_end = self.get_attribute(constants.VI_ATTR_SEND_END_EN)
 
         for i in range(len(data)):
-            self.device.write(data[i:i+1])
+            self.device.write(data[i:i + 1])
 
         if send_end:
             # EOM 4882
