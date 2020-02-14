@@ -23,7 +23,7 @@ class ChannelProperty(Property):
     """
     def __init__(self, channel, name, default_value, specs):
 
-        #: Refrence to the channel holding that property.
+        #: Reference to the channel holding that property.
         self._channel = channel
 
         super(ChannelProperty, self).__init__(name, default_value, specs)
@@ -50,7 +50,7 @@ class ChannelProperty(Property):
 
 
 class ChDict(dict):
-    """Default dict like creating specialized sommand sets for a channel.
+    """Default dict like creating specialized command sets for a channel.
 
     """
     def __missing__(self, key):

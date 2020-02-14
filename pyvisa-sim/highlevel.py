@@ -32,7 +32,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
 
     When a new resource object is requested to pyvisa, the library creates a Session object
     (that knows how to perform low-level communication operations) associated with a session handle
-    (a number, usually refered just as session).
+    (a number, usually referred just as session).
 
     A call to a library function is handled by PyVisaLibrary if it involves a resource agnostic
     function or dispatched to the correct session object (obtained from the session id).
