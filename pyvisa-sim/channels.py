@@ -9,7 +9,7 @@
     :license: MIT, see LICENSE for more details.
 """
 from collections import defaultdict
-from typing import Optional
+from typing import Optional, Tuple
 
 import stringparser
 
@@ -99,8 +99,10 @@ class Channels(Component):
         """
         self._dialogues['__default__'][to_bytes(query)] = to_bytes(response)
 
-    def add_property(self, name, default_value, getter_pair, setter_triplet,
-                     specs):
+    def add_property(
+            self, name: str, default_value: str, getter_pair: Tuple[str, str], setter_triplet: Tuple[str, str, str],
+            specs
+    ) -> None:
         """Add property to channel
 
         :param name: property name
@@ -109,8 +111,7 @@ class Channels(Component):
         :param setter_triplet: (query, response, error)
         :param specs: specification of the Property
         """
-        self._properties[name] = ChannelProperty(self, name,
-                                                 default_value, specs)
+        self._properties[name] = ChannelProperty(self, name, default_value, specs)
 
         if getter_pair:
             query, response = getter_pair
