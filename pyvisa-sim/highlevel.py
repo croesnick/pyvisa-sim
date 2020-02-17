@@ -10,13 +10,13 @@
 """
 
 import random
-from traceback import format_exc
 from typing import Dict, Tuple, Any
 
 import pyvisa.errors as errors
 from pyvisa import constants, highlevel, rname
 from pyvisa.compat import OrderedDict
 
+from . import exceptions
 # This import is required to register subclasses
 # noinspection PyUnresolvedReferences
 from . import gpib, serial, tcpip, usb
@@ -60,9 +60,9 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
                 self.devices = parser.get_devices('default.yaml', True)
             else:
                 self.devices = parser.get_devices(self.library_path, False)
-        except Exception as e:
-            msg = 'Could not parse definitions file. %r'
-            raise type(e)(msg % format_exc())
+        except Exception as err:
+            raise exceptions.DeviceSpecError(
+                'Could not parse definitions file: {0!r}'.format(self.library_path)) from err
 
     def _register(self, obj: Any) -> sessions.SessionID:
         """Creates a random but unique session handle for a session object,
