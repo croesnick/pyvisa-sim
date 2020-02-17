@@ -11,19 +11,17 @@
 
 import random
 from traceback import format_exc
-from typing import Dict, Any, Tuple
+from typing import Dict, Tuple, Any
 
 import pyvisa.errors as errors
 from pyvisa import constants, highlevel, rname
 from pyvisa.compat import OrderedDict
 
-from . import parser
-from . import sessions
-
-
 # This import is required to register subclasses
 # noinspection PyUnresolvedReferences
 from . import gpib, serial, tcpip, usb
+from . import parser
+from . import sessions
 
 
 class SimVisaLibrary(highlevel.VisaLibraryBase):
@@ -36,7 +34,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
     (a number, usually referred just as session).
 
     A call to a library function is handled by PyVisaLibrary if it involves a resource agnostic
-    function or dispatched to the correct session object (obtained from the session id).
+    function or if dispatched to the correct session object (obtained from the session id).
 
     Importantly, the user is unaware of this. PyVisaLibrary behaves for the user just as NIVisaLibrary.
     """
@@ -55,7 +53,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
 
     def _init(self):
         #: map session handle to session object.
-        self.sessions = {}  # type: Dict[int, Any]
+        self.sessions = {}  # type: Dict[sessions.SessionID, sessions.Session]
 
         try:
             if self.library_path == 'unset':
@@ -66,7 +64,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
             msg = 'Could not parse definitions file. %r'
             raise type(e)(msg % format_exc())
 
-    def _register(self, obj: sessions.Session) -> int:
+    def _register(self, obj: Any) -> sessions.SessionID:
         """Creates a random but unique session handle for a session object,
         register it in the sessions dictionary and return the value
 
@@ -86,7 +84,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
             self, session: sessions.Session, resource_name: str,
             access_mode: constants.AccessModes = constants.AccessModes.no_lock,
             open_timeout: int = constants.VI_TMO_IMMEDIATE
-    ) -> Tuple[int, constants.StatusCode]:
+    ) -> Tuple[sessions.SessionID, constants.StatusCode]:
         """Opens a session to the specified resource.
 
         Corresponds to viOpen function of the VISA library.
@@ -95,11 +93,10 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
                         (should always be a session returned
                         from open_default_resource_manager()).
         :param resource_name: Unique symbolic name of a resource.
-        :param access_mode: Specifies the mode by which the resource is to be accessed. (constants.AccessModes)
+        :param access_mode: Specifies the mode by which the resource is to be accessed.
         :param open_timeout: Specifies the maximum time period (in milliseconds) that this operation waits
                              before returning an error.
         :return: Unique logical identifier reference to a session, return value of the library call.
-        :rtype: session, :class:`pyvisa.constants.StatusCode`
         """
 
         try:
@@ -114,7 +111,6 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
         # Loops through all session types, tries to parse the resource name and if ok, open it.
 
         cls = sessions.Session.get_session_class(parsed.interface_type_const, parsed.resource_class)
-
         sess = cls(session, resource_name, parsed)
 
         try:
@@ -124,14 +120,13 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
 
         return self._register(sess), constants.StatusCode.success
 
-    def close(self, session):
+    def close(self, session: sessions.SessionID) -> constants.StatusCode:
         """Closes the specified session, event, or find list.
 
         Corresponds to viClose function of the VISA library.
 
         :param session: Unique logical identifier to a session, event, or find list.
         :return: return value of the library call.
-        :rtype: :class:`pyvisa.constants.StatusCode`
         """
         try:
             del self.sessions[session]
@@ -139,7 +134,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
         except KeyError:
             return constants.StatusCode.error_invalid_object
 
-    def open_default_resource_manager(self):
+    def open_default_resource_manager(self) -> Tuple[int, constants.StatusCode]:
         """This function returns a session to the Default Resource Manager resource.
 
         Corresponds to viOpenDefaultRM function of the VISA library.
@@ -149,7 +144,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
         """
         return self._register(self), constants.StatusCode.success
 
-    def list_resources(self, session, query='?*::INSTR'):
+    def list_resources(self, session: sessions.Session, query: str = '?*::INSTR'):
         """Returns a tuple of all connected devices matching query.
 
         :param session:
@@ -167,7 +162,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
 
         raise errors.VisaIOError(errors.StatusCode.error_resource_not_found.value)
 
-    def read(self, session, count) -> Tuple[bytes, constants.StatusCode]:
+    def read(self, session: sessions.SessionID, count: int) -> Tuple[bytes, constants.StatusCode]:
         """Reads data from device or interface synchronously.
 
         Corresponds to viRead function of the VISA library.
@@ -175,7 +170,6 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
         :param session: Unique logical identifier to a session.
         :param count: Number of bytes to be read.
         :return: data read, return value of the library call.
-        :rtype: bytes, :class:`pyvisa.constants.StatusCode`
         """
 
         try:
@@ -191,30 +185,27 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
         except AttributeError:
             return b'', constants.StatusCode.error_nonsupported_operation
 
-    def write(self, session, data):
-        # type: (Any, str) -> int
+    def write(self, session: sessions.SessionID, data: str) -> Tuple[int, constants.StatusCode]:
         """Writes data to device or interface synchronously.
 
         Corresponds to viWrite function of the VISA library.
 
         :param session: Unique logical identifier to a session.
         :param data: data to be written.
-        :type data: str
         :return: Number of bytes actually transferred, return value of the library call.
-        :rtype: int, :class:`pyvisa.constants.StatusCode`
         """
 
         try:
             sess = self.sessions[session]
         except KeyError:
-            return constants.StatusCode.error_invalid_object
+            return 0, constants.StatusCode.error_invalid_object
 
         try:
             return sess.write(data)
         except AttributeError:
-            return constants.StatusCode.error_nonsupported_operation
+            return 0, constants.StatusCode.error_nonsupported_operation
 
-    def get_attribute(self, session, attribute) -> Tuple[int, constants.StatusCode]:
+    def get_attribute(self, session: sessions.SessionID, attribute) -> Tuple[int, constants.StatusCode]:
         """Retrieves the state of an attribute.
 
         Corresponds to viGetAttribute function of the VISA library.
@@ -231,7 +222,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
 
         return sess.get_attribute(attribute)
 
-    def set_attribute(self, session, attribute, attribute_state) -> constants.StatusCode:
+    def set_attribute(self, session: sessions.SessionID, attribute, attribute_state) -> constants.StatusCode:
         """Sets the state of an attribute.
 
         Corresponds to viSetAttribute function of the VISA library.
@@ -249,10 +240,10 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
 
         return sess.set_attribute(attribute, attribute_state)
 
-    def disable_event(self, session, event_type, mechanism):
+    def disable_event(self, session: sessions.SessionID, event_type, mechanism):
         # TODO: implement this for GPIB finalization
         pass
 
-    def discard_events(self, session, event_type, mechanism):
+    def discard_events(self, session: sessions.SessionID, event_type, mechanism):
         # TODO: implement this for GPIB finalization
         pass

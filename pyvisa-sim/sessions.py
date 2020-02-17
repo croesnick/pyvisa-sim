@@ -16,8 +16,10 @@ from typing_extensions import Type
 
 from .common import logger
 
+SessionID = int
 
-class Session(object):
+
+class Session:
     """A base class for Session objects.
 
     Just makes sure that common methods are defined and information is stored.
@@ -131,3 +133,9 @@ class Session(object):
             return constants.StatusCode.error_nonsupported_attribute_state
 
         return constants.StatusCode.success
+
+    def read(self, count: int):
+        ...
+
+    def write(self, data: str):
+        ...

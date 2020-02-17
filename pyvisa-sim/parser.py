@@ -34,7 +34,7 @@ SPEC_VERSION = '1.1'
 SPEC_VERSION_TUPLE = _ver_to_tuple(SPEC_VERSION)
 
 
-class SimpleChainmap(object):
+class SimpleChainmap:
     """Combine multiple mappings for sequential lookup.
     """
 
@@ -209,8 +209,7 @@ def get_device(name, device_dict, loader, resource_dict) -> Device:
     return device
 
 
-class Loader(object):
-
+class Loader:
     def __init__(self, filename, bundled):
 
         # (absolute path / resource name / None, bundled) -> dict

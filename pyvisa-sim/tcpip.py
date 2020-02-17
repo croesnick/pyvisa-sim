@@ -18,7 +18,6 @@ from . import sessions
 
 class BaseTCPIPSession(sessions.Session):
     """Base class for TCPIP sessions.
-
     """
 
     def read(self, count):

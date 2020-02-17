@@ -115,7 +115,7 @@ class Channels(Component):
 
         if getter_pair:
             query, response = getter_pair
-            self._getters['__default__'][to_bytes(query)] = name, response
+            self._getters['__default__'][to_bytes(query)] = name, response  # type: ignore
 
         if setter_triplet:
             query, response, error = setter_triplet
