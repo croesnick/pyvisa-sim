@@ -9,6 +9,8 @@
     :license: MIT, see LICENSE for more details.
 """
 
+import logging
+import pathlib
 import random
 from typing import Dict, Tuple, Any
 
@@ -23,6 +25,8 @@ from . import gpib, serial, tcpip, usb
 from . import parser
 from . import sessions
 
+logger = logging.getLogger(__name__)
+
 
 class SimVisaLibrary(highlevel.VisaLibraryBase):
     """A pure Python backend for PyVISA.
@@ -36,7 +40,8 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
     A call to a library function is handled by PyVisaLibrary if it involves a resource agnostic
     function or if dispatched to the correct session object (obtained from the session id).
 
-    Importantly, the user is unaware of this. PyVisaLibrary behaves for the user just as NIVisaLibrary.
+    Importantly, the user is unaware of this. PyVisaLibrary behaves for the user just as
+    :class:`pyvisa.ctwrapper.highlevel.NIVisaLibrary`.
     """
 
     @staticmethod
@@ -57,6 +62,7 @@ class SimVisaLibrary(highlevel.VisaLibraryBase):
 
         try:
             if self.library_path == 'unset':
+                logger.debug('No library path specified; loading defaults.')
                 self.devices = parser.get_devices('default.yaml', True)
             else:
                 self.devices = parser.get_devices(self.library_path, False)

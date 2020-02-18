@@ -324,9 +324,8 @@ class Device(Component):
             return response
 
 
-class Devices(object):
+class Devices:
     """The group of connected devices.
-
     """
 
     def __init__(self):

@@ -38,7 +38,12 @@ class ChannelProperty(Property):
         """Get the current value for a channel.
 
         """
-        return self._value[self._channel._selected]
+        value = self._value[self._channel._selected]
+
+        if 'valid' in self.specs and isinstance(self.specs['valid'], dict):
+            return self.specs['valid'][value]
+
+        return value
 
     def set_value(self, value):
         """Set the current value for a channel.

@@ -9,6 +9,8 @@
     :license: MIT, see LICENSE for more details.
 """
 
+import logging
+
 import pkg_resources
 
 from .highlevel import SimVisaLibrary
@@ -21,3 +23,5 @@ except:  # pragma: no cover
     # so the reported version will be __unknown__
 
 WRAPPER_CLASS = SimVisaLibrary
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())

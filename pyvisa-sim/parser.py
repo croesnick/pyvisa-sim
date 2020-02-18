@@ -12,7 +12,6 @@
 import os
 from contextlib import closing
 from io import open, StringIO
-from traceback import format_exc
 from typing import Dict, Tuple
 
 import pkg_resources
@@ -83,17 +82,17 @@ def _load(content_or_fp):
     """
     try:
         data = yaml.load(content_or_fp, Loader=yaml.loader.BaseLoader)
-    except Exception as e:
-        raise type(e)('Malformed yaml file:\n%r' % format_exc())
+    except Exception as err:
+        raise ValueError('Malformed yaml file') from err
 
     try:
         ver = data['spec']
-    except:
+    except KeyError:
         raise ValueError('The file does not specify a spec version')
 
     try:
         ver = tuple(map(int, (ver.split("."))))
-    except:
+    except Exception:
         raise ValueError("Invalid spec version format. Expect 'X.Y'"
                          " (X and Y integers), found %s" % ver)
 
@@ -129,9 +128,8 @@ def update_component(name, comp, component_dict):
     for dia in component_dict.get('dialogues', ()):
         try:
             comp.add_dialogue(*_get_pair(dia))
-        except Exception as e:
-            msg = 'In device %s, malformed dialogue %s\n%r'
-            raise Exception(msg % (name, dia, e))
+        except Exception as err:
+            raise ValueError('In device {dev!r}, malformed dialogue {diag!r}'.format(dev=name, diag=dia)) from err
 
     for prop_name, prop_dict in component_dict.get('properties', {}).items():
         try:
@@ -141,9 +139,9 @@ def update_component(name, comp, component_dict):
                       if 'setter' in prop_dict else None)
             comp.add_property(prop_name, prop_dict.get('default', ''),
                               getter, setter, prop_dict.get('specs', {}))
-        except Exception as e:
-            msg = 'In device %s, malformed property %s\n%r'
-            raise type(e)(msg % (name, prop_name, format_exc()))
+        except Exception as ex:
+            raise ValueError(
+                'In device {dev!r}, malformed property {prop!r}'.format(dev=name, prop=prop_name)) from ex
 
 
 def get_bases(definition_dict, loader):
@@ -223,10 +221,8 @@ class Loader:
         self._basepath = os.path.dirname(filename)
 
     def load(self, filename, bundled, parent, required_version):
-
         if self._bundled and not bundled:
-            msg = 'Only other bundled files can be loaded from bundled files.'
-            raise ValueError(msg)
+            raise ValueError('Only other bundled files can be loaded from bundled files.')
 
         if parent is None:
             parent = self._filename
@@ -238,7 +234,6 @@ class Loader:
         return self._load(filename, bundled, required_version)
 
     def _load(self, filename, bundled, required_version):
-
         if (filename, bundled) in self._cache:
             return self._cache[(filename, bundled)]
 
@@ -259,7 +254,6 @@ class Loader:
         return data
 
     def get_device_dict(self, device, filename, bundled, required_version):
-
         if filename is None:
             data = self.data
         else:

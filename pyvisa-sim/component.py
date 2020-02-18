@@ -39,19 +39,22 @@ class Property(object):
         :param specs: specification dictionary
         """
 
-        t = specs.get('type', None)
-        if t:
-            for key, val in (('float', float), ('int', int), ('str', str)):
-                if t == key:
-                    t = specs['type'] = val
+        prop_type = specs.get('type', None)
+        if prop_type:
+            for _typestr, _type in (('float', float), ('int', int), ('str', str)):
+                if prop_type == _typestr:
+                    prop_type = specs['type'] = _type
                     break
+            else:
+                del specs['type']
 
-        for key in ('min', 'max'):
-            if key in specs:
-                specs[key] = t(specs[key])
+        for bound in ('min', 'max'):
+            if bound in specs:
+                specs[bound] = prop_type(specs[bound])
 
         if 'valid' in specs:
-            specs['valid'] = set([t(val) for val in specs['valid']])
+            if not isinstance(specs['valid'], dict):
+                specs['valid'] = set([prop_type(val) for val in specs['valid']])
 
         self.name = name
         self.specs = specs
@@ -63,11 +66,17 @@ class Property(object):
     def init_value(self, value: str):
         """Initialize the value hold by the Property.
         """
+        if 'valid' in self.specs and isinstance(self.specs['valid'], dict):
+            value = self.specs['valid'][self._value]
+
         self.set_value(value)
 
     def get_value(self):
         """Return the value stored by the Property.
         """
+        if 'valid' in self.specs and isinstance(self.specs['valid'], dict):
+            return self.specs['valid'][self._value]
+
         return self._value
 
     def set_value(self, value: str):
@@ -89,8 +98,15 @@ class Property(object):
             raise ValueError
         if 'max' in specs and value > specs['max']:
             raise ValueError
-        if 'valid' in specs and value not in specs['valid']:
-            raise ValueError
+        if 'valid' in specs:
+            if isinstance(specs['valid'], dict):
+                if value not in specs['valid']:
+                    raise ValueError('Expected value to be one of {valid!r}; '
+                                     'got instead: {value!r}'.format(valid=specs['valid'].keys(), value=value))
+                else:
+                    if value not in specs['valid']:
+                        raise ValueError('Expected value to be one of {valid!r}; '
+                                         'got instead: {value!r}'.format(valid=specs['valid'], value=value))
 
         return value
 
