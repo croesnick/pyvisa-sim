@@ -67,6 +67,8 @@ error types in two: **command_error** which is returned when fed an invalid comm
 or an out of range command, or **query_error** which is returned when trying to
 read an empty buffer. 
 
+.. code-block::
+
     error:
       response:
         command_error: null_response
@@ -78,7 +80,7 @@ read an empty buffer.
 In addition to customizing how responses are generated you can specify a status
 register in which errors are tracked. Each element in the list specifies a
 single register so in the example above, if both a **command_error** and
-**query_error** are raised, then querying '*ESR?' will return '36'.
+**query_error** are raised, then querying ``*ESR?`` will return ``36``.
 
 
 dialogues
@@ -101,8 +103,10 @@ You can have as many items as you want.
 properties
 ~~~~~~~~~~
 
-This is the other important part of the device. Consider it as a dialogue with some memory. It is
-a dictionary. The key is the name of the property and the value is the property definition.
+This is the other important part of the device.
+Consider it as a dialogue with some memory.
+It is a dictionary.
+The key is the name of the property and the value is the property definition.
 For example::
 
     properties:
@@ -119,17 +123,17 @@ For example::
           max: 100000
           type: float
 
-This says that there is a property called **frequency** with a default value of **100.0*.
+This says that there is a property called **frequency** with a default value of **100.0**.
 
-To get the current frequency value you need to send **?FREQ** and the response will be
-formatted as **{:.2f}**. This is the PEP3101_ formatting specification.
+To get the current frequency value you need to send ``?FREQ`` and the response will be
+formatted as ``{:.2f}``. This is the PEP3101_ formatting specification.
 
-To set the frequency value you need to send **!FREQ** followed by a number formatted as
-**{:.2f}**. Again this is the PEP3101_ formatting specification but used for parsing.
+To set the frequency value you need to send ``!FREQ`` followed by a number formatted as
+``{:.2f}``. Again this is the PEP3101_ formatting specification but used for parsing.
 If you want know more about it, take a look at the stringparser_ library.
 If setting the property was successful, the response will be **OK**.
-If there was an error, the response will be **ERROR** (the default). You can specify
-an error-specific error message for this setter as::
+If there was an error, the response will be **ERROR** (the default).
+You can specify an error-specific error message for this setter as::
 
             e: Some other error message.
 
@@ -140,14 +144,41 @@ Finally you can specify the specs of the property::
           max: 100000
           type: float
 
-You can define the minimum (min) and maximum (max) values, and the type of the value
-(float, int, str).
+You can define the minimum (min) and maximum (max) values, and the type of the value (float, int, str).
+
+.. note:: Defining a ``type`` is optional.
+    If present, the property's value will be converted to the defined type when setter or getter is invoked.
+    If missing, however, the type will be identical to the ``default`` value's type.
+
+    The ``specs`` block above could thus be shortened to
+
+    .. code-block:: python
+
+        specs:
+          min: 1
+          max: 100000
+
+    as the range's values would be converted to have the same type as the default value (float).
+
 You can also specify the valid values, for example::
 
         specs:
           valid: [1, 3, 5]
 
 Notice that even if the type is a float, the communication is done with strings.
+
+.. note:: The ``valid`` key not only accepts lists of allowed values, but also mappings (dictionaries).
+    A mapping serves two purposes: As a whitelist of allowed values, and as a translation of a key into its corresponding value.
+    An example::
+
+        specs:
+          valid:
+            ANALOG: 1
+            DIGITAL: 2
+
+    In the above example, the accepted values are ``"ANALOG"`` and ``"DIGITAL"``.
+    These values are converted and stored internally according to the specified mapping:
+    ``"ANALOG"`` will be stored as ``1`` and ``"DIGITAL"`` as ``2`` (both int).
 
 
 resources
