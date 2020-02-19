@@ -178,7 +178,33 @@ Notice that even if the type is a float, the communication is done with strings.
 
     In the above example, the accepted values are ``"ANALOG"`` and ``"DIGITAL"``.
     These values are converted and stored internally according to the specified mapping:
-    ``"ANALOG"`` will be stored as ``1`` and ``"DIGITAL"`` as ``2`` (both int).
+    ``"ANALOG"`` will be stored as ``1`` and ``"DIGITAL"`` as ``2``.
+
+
+channels
+~~~~~~~~
+
+Properties can also be bound to *channels*.
+For example::
+
+    channels:
+      measure:
+        ids: [1, 2, 3, 4]
+        can_select: True
+        properties:
+          voltage:
+            default: 1.0
+            getter:
+              q: "VOLT? @{ch_id}"
+              r: "{:.3f}"
+            setter:
+              q: "VOLT {:.3f}, @{ch_id}"
+
+
+A group called **measure**, comprised of four channels (1-4) are specified in the above example.
+Each channel is defined to have a property **voltage** with a default value, a getter and a setter.
+Both getter and setter are *parametrized* by the channel id (``ch_id``), meaning that a voltage set on channel 1 does not affect the values for channel 2 to 4.
+The ``can_select`` flag (a bool) indicates whether or not the channel can be selected inside the query or if it is pre-selected by a previous command.
 
 
 resources
@@ -188,10 +214,10 @@ It is a dictionary that binds resource names to device types. The keys of this
 dictionary are the resource names which must be unique within this file. For example::
 
     resources:
-        ASRL1::INSTR:
-            device: device 1
-        USB::0x1111::0x2222::0x1234::INSTR:
-            device: device 1
+      ASRL1::INSTR:
+        device: device 1
+      USB::0x1111::0x2222::0x1234::INSTR:
+        device: device 1
 
 Within each resource, the type is specified under the **device** key. The associated value
 (e.g **device 1**) must corresponds to one of the keys in the **devices** dictionary that
@@ -200,18 +226,18 @@ creating two different objects of the same type.
 
 You can also bind a resource name to device defined in another file. Simply do::
 
-        ASRL3::INSTR:
-            device: device 1
-            filename: myfile.yaml
+    ASRL3::INSTR:
+      device: device 1
+      filename: myfile.yaml
 
 The path can specified in relation with the current file or in an absolute way.
 
 If you want to use a file which is bundled with PyVISA-sim, just write::
 
-        ASRL3::INSTR:
-            device: device 1
-            filename: default.yaml
-            bundled: true
+    ASRL3::INSTR:
+      device: device 1
+      filename: default.yaml
+      bundled: true
 
 
 .. _YAML: http://en.wikipedia.org/wiki/YAML
