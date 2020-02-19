@@ -36,6 +36,12 @@ tests_require = [
     'pytest-cov',
 ]
 
+docs_require = [
+    'sphinx',
+    'sphinx-autodoc-typehints',
+    'sphinx-rtd-theme',
+]
+
 setup(
     name='PyVISA-sim',
     description='Simulated backend for PyVISA implementing TCPIP, GPIB, RS232, and USB resources',
@@ -52,6 +58,7 @@ setup(
     install_requires=install_requires,
     extras_require={
         'test': tests_require,
+        'docs': docs_require,
     },
     classifiers=[
         'Development Status :: 4 - Beta',
