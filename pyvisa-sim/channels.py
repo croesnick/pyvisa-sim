@@ -9,30 +9,32 @@
     :license: MIT, see LICENSE for more details.
 """
 from collections import defaultdict
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 import stringparser
 
 from .common import logger
-from .component import Component, Property, to_bytes
+from .component import Component, Property, to_bytes, SpecsT, ValueT
+
+ValueContainerT = Dict[int, ValueT]
 
 
 class ChannelProperty(Property):
     """A channel property storing the value for all channels.
     """
 
-    def __init__(self, channel: 'Channels', name: str, default_value: str, specs):
+    def __init__(self, channel: 'Channels', name: str, default_value: ValueT, specs: SpecsT) -> None:
         #: Reference to the channel holding that property.
         self._channel = channel
 
         super(ChannelProperty, self).__init__(name, default_value, specs)
 
-    def init_value(self, value):
+    def init_value(self, value: ValueT) -> None:
         """Create an empty defaultdict holding the default value.
 
         """
         value = self.validate_value(value)
-        self._value = defaultdict(lambda: value)
+        self._value = defaultdict(lambda: value)  # type: ignore
 
     def get_value(self):
         """Get the current value for a channel.

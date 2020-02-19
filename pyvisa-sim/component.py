@@ -8,14 +8,21 @@
     :copyright: 2014 by PyVISA-sim Authors, see AUTHORS for more details.
     :license: MIT, see LICENSE for more details.
 """
-from typing import Dict, Tuple, List, Optional, Any
+import logging
+from typing import Dict, Tuple, List, Optional, Any, Union
 
 import stringparser
 
-from .common import logger
+logger = logging.getLogger(__name__)
+
+ValueT = Union[float, int, str]
+SpecsT = Dict[str, Any]
+
+# Sentinel used for when there should not be a response to a query
+NoResponse = object()
 
 
-def to_bytes(val):
+def to_bytes(val: Union[Any, str]) -> Union[Any, bytes]:
     """Takes a text message and return a tuple
     """
     if val is NoResponse:
@@ -24,15 +31,11 @@ def to_bytes(val):
     return val.encode()
 
 
-# Sentinel used for when there should not be a response to a query
-NoResponse = object()
-
-
-class Property(object):
-    """A device property
+class Property:
+    """A device property.
     """
 
-    def __init__(self, name, value, specs: Dict[str, Any]) -> None:
+    def __init__(self, name: str, value: ValueT, specs: SpecsT) -> None:
         """
         :param name: name of the property
         :param value: default value
@@ -46,7 +49,13 @@ class Property(object):
                     prop_type = specs['type'] = _type
                     break
             else:
-                del specs['type']
+                logger.debug(
+                    'No type conversion requested for property {prop!r} '
+                    'albeit explicit type specification {vtype!r} given.'.format(prop=name, vtype=prop_type))
+        else:
+            prop_type = specs['type'] = type(value)
+            logger.info('No explicit type specification given for property {prop!r}. '
+                        'Using default value\'s type {dtype!r} as fallback.'.format(prop=name, dtype=prop_type))
 
         for bound in ('min', 'max'):
             if bound in specs:
@@ -59,19 +68,14 @@ class Property(object):
         self.name = name
         self.specs = specs
         # TODO Create a property `value`
-        self._value = None  # type: Optional[str]
-
         self.init_value(value)
 
-    def init_value(self, value: str):
+    def init_value(self, value: ValueT):
         """Initialize the value hold by the Property.
         """
-        if 'valid' in self.specs and isinstance(self.specs['valid'], dict):
-            value = self.specs['valid'][self._value]
-
         self.set_value(value)
 
-    def get_value(self):
+    def get_value(self) -> ValueT:
         """Return the value stored by the Property.
         """
         if 'valid' in self.specs and isinstance(self.specs['valid'], dict):
@@ -79,39 +83,35 @@ class Property(object):
 
         return self._value
 
-    def set_value(self, value: str):
+    def set_value(self, value: ValueT):
         """Set the value
         """
         self._value = self.validate_value(value)
 
-    def validate_value(self, string_value: str) -> str:
+    def validate_value(self, value: ValueT) -> ValueT:
         """Validate that a value match the Property specs.
-
         """
         specs = self.specs
-        if 'type' in specs:
-            value = specs['type'](string_value)
-        else:
-            value = string_value
+        value_parsed = specs['type'](value) if 'type' in specs else value
 
-        if 'min' in specs and value < specs['min']:
+        if 'min' in specs and value_parsed < specs['min']:
             raise ValueError
-        if 'max' in specs and value > specs['max']:
+        if 'max' in specs and value_parsed > specs['max']:
             raise ValueError
         if 'valid' in specs:
             if isinstance(specs['valid'], dict):
-                if value not in specs['valid']:
+                if value_parsed not in specs['valid']:
                     raise ValueError('Expected value to be one of {valid!r}; '
-                                     'got instead: {value!r}'.format(valid=specs['valid'].keys(), value=value))
-                else:
-                    if value not in specs['valid']:
-                        raise ValueError('Expected value to be one of {valid!r}; '
-                                         'got instead: {value!r}'.format(valid=specs['valid'], value=value))
+                                     'got instead: {value!r}'.format(valid=specs['valid'].keys(), value=value_parsed))
+            else:
+                if value_parsed not in specs['valid']:
+                    raise ValueError('Expected value to be one of {valid!r}; '
+                                     'got instead: {value!r}'.format(valid=specs['valid'], value=value_parsed))
 
-        return value
+        return value_parsed
 
 
-class Component(object):
+class Component:
     """A component of a device.
     """
 
