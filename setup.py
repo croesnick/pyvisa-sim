@@ -69,10 +69,15 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    packages=['pyvisa-sim',
-              'pyvisa-sim.testsuite'],
+    packages=[
+        'pyvisa-sim',
+        'pyvisa-sim.testsuite',
+    ],
     package_data={
-        'pyvisa-sim': ['default.yaml']
+        'pyvisa-sim': [
+            'default.yaml',
+            'py.typed',
+        ],
     },
     platforms="Linux, Windows, Mac",
     use_2to3=False,
